@@ -46,6 +46,7 @@ int main()
     int velocity{0};
     bool isInAir{false};
     const int jumpVelocity{-600};
+    bool collision{};
 
     Texture2D scarfyTexture = LoadTexture("textures/scarfy.png");
 
@@ -101,6 +102,8 @@ int main()
     Texture2D foreground = LoadTexture("textures/foreground.png");
     float foregroundXPosition{};
 
+    float finishLine{nebulae[sizeOfNebulae - 1].position.x};
+
     SetTargetFPS(60);
     while (!WindowShouldClose())
     {
@@ -114,7 +117,7 @@ int main()
         // draw background
         backgroundXPosition -= 20 * deltaTime;
         midgroundXPosition -= 40 * deltaTime;
-        foregroundXPosition -= 60 * deltaTime;
+        foregroundXPosition -= 80 * deltaTime;
 
         if (backgroundXPosition <= -background.width * 2)
         {
@@ -169,6 +172,9 @@ int main()
             nebulae[i].position.x += nebulaVelocity * deltaTime;
         }
 
+        // update finish line
+        finishLine += nebulaVelocity * deltaTime;
+
         // Update scarfyTexture position
         scarfyData.position.y += velocity * deltaTime;
 
@@ -183,16 +189,50 @@ int main()
             nebulae[i] = updateAnimData(nebulae[i], deltaTime, 7);
         }
 
-        // Draw Nebulae;
-        for (int i = 0; i < sizeOfNebulae; i++)
+     
+        for (AnimData nebula : nebulae)
         {
-            DrawTextureRec(nebulaTexture, nebulae[i].rectangle, nebulae[i].position, WHITE);
+            float padding{50};
+            Rectangle nebulaRectangle{
+                nebula.position.x + padding,
+                nebula.position.y + padding,
+                nebula.rectangle.width - 2 * padding,
+                nebula.rectangle.height - 2 * padding};
+
+            Rectangle scarfRectangle{
+                scarfyData.position.x,
+                scarfyData.position.y,
+                scarfyData.rectangle.width,
+                scarfyData.rectangle.height};
+
+            if (CheckCollisionRecs(nebulaRectangle, scarfRectangle))
+            {
+                collision = true;
+            }
         }
 
-        // Draw scarfyTexture
-        DrawTextureRec(scarfyTexture, scarfyData.rectangle, scarfyData.position, WHITE);
+        if (collision)
+        {
+            DrawText("Game Over!", windowDimensions[0]/4,windowDimensions[1]/2,40,WHITE);
+        }
+        else if (scarfyData.position.x >= finishLine)
+        {
+            DrawText("You Win!", windowDimensions[0]/4,windowDimensions[1]/2,40,WHITE);
+        }
+        
+        else
+        {
+            // Draw Nebulae;
+            for (int i = 0; i < sizeOfNebulae; i++)
+            {
+                DrawTextureRec(nebulaTexture, nebulae[i].rectangle, nebulae[i].position, WHITE);
+            }
 
-        // stop drawing
+            // Draw scarfyTexture
+            DrawTextureRec(scarfyTexture, scarfyData.rectangle, scarfyData.position, WHITE);
+        }
+
+            // stop drawing
         EndDrawing();
     }
     UnloadTexture(background);
@@ -200,5 +240,6 @@ int main()
     UnloadTexture(foreground);
     UnloadTexture(scarfyTexture);
     UnloadTexture(nebulaTexture);
+    CloseAudioDevice();
     CloseWindow();
 }
